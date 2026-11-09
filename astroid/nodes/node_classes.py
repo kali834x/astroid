@@ -4860,11 +4860,21 @@ class JoinedStr(NodeNG):
         for prefix in cls._safe_infer_from_node(nodes[0], context):
             for suffix in cls._infer_from_values(nodes[1:], context):
                 result = ""
+                too_large = False
                 for node in (prefix, suffix):
                     if isinstance(node, Const):
-                        result += str(node.value)
-                        continue
-                    result += UNINFERABLE_VALUE
+                        piece = str(node.value)
+                    else:
+                        piece = UNINFERABLE_VALUE
+                    # Joining f-string parts that each stay under the cap can
+                    # still build an unbounded string; bound the running total.
+                    if len(result) + len(piece) > util.MAX_FORMATTED_SIZE:
+                        too_large = True
+                        break
+                    result += piece
+                if too_large:
+                    yield util.Uninferable
+                    continue
                 yield Const(result)
 
     @classmethod

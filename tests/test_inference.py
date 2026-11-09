@@ -5481,6 +5481,24 @@ def test_fstring_oversized_width_uninferable(code: str) -> None:
     assert list(node.infer()) == [util.Uninferable]
 
 
+@pytest.mark.parametrize(
+    "code",
+    [
+        "f\"{'a' * 60000000}\" f\"{'b' * 60000000}\"",
+        "f\"{'a' * 60000000}{'b' * 60000000}\"",
+    ],
+)
+def test_fstring_oversized_concatenation_uninferable(code: str) -> None:
+    """Joining f-string parts must not build an oversized string."""
+    node = extract_node(code)
+    assert list(node.infer()) == [util.Uninferable]
+
+
+def test_fstring_small_concatenation_still_infers() -> None:
+    node = extract_node("f\"{'ab'}\" f\"{'cd'}\"")
+    assert next(node.infer()).value == "abcd"
+
+
 @pytest.mark.parametrize("code", ["f'{-1:c}'", "f'{0x110000:c}'", "f'{2**64:c}'"])
 def test_fstring_char_out_of_range_uninferable(code: str) -> None:
     """Regression test for https://github.com/pylint-dev/astroid/issues/3301."""

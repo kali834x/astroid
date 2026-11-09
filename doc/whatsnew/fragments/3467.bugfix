@@ -1,0 +1,8 @@
+Bound the size of an f-string joined during inference. Each part of an
+f-string could already infer to a string up to the per-operation cap, but
+``JoinedStr`` concatenated the parts with no limit, so a short source such as
+``f"{'a' * 90000000}" f"{'b' * 90000000}"`` materialized a multi-hundred-megabyte
+string. The join now yields ``Uninferable`` past the same cap used for
+repetition, concatenation and format width.
+
+Refs #3467
